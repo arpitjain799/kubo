@@ -506,4 +506,27 @@ func TestGateway(t *testing.T) {
 			})
 		})
 	})
+
+	t.Run("OnlyTrustless Enabled", func(t *testing.T) {
+		// Trusted and trustless responses are tested in more detail in Boxo.
+		t.Parallel()
+		node := harness.NewT(t).NewNode().Init()
+		node.UpdateConfig(func(cfg *config.Config) {
+			cfg.Gateway.OnlyTrustless = config.True
+		})
+		node.StartDaemon()
+
+		cidFoo := node.IPFSAddStr("foo")
+
+		t.Run("trusted response fails", func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, http.StatusNotImplemented, node.GatewayClient().Get("/ipfs/"+cidFoo).StatusCode)
+		})
+
+		t.Run("trustless response succeeds", func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, http.StatusOK, node.GatewayClient().Get("/ipfs/"+cidFoo+"?format=raw").StatusCode)
+		})
+	})
+
 }
